@@ -1,11 +1,12 @@
 {
   "name": "splendor",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "",
-  "main": "index.js",
   "scripts": {
     "start": "cd out && node server.js",
-    "compile": "cd src && tsc -p tsconfig.json",
+    "compile-server": "cd src && tsc -p ./tsconfig.json",
+    "compile-client": "cd client && tsc -p ./tsconfig.json && cd .. && bash module_to_cdn.bash",
+    "compile": "npm run compile-server && npm run compile-client",
     "c": "npm run compile",
     "s": "npm run start",
     "dev": "npm run c && npm run s"
@@ -17,7 +18,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/Craft485/Splendor/issues"
   },
