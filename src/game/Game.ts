@@ -5,10 +5,6 @@ export class Player  {
     constructor(id: string) {
         this.id = id
     }
-
-    static IsPlayer(obj: any): boolean {
-        return obj instanceof Player
-    }
 }
 
 export class Game {
@@ -21,7 +17,11 @@ export class Game {
         this.Join(startingPlayer)
     }
 
-    Join(player: Player | string) {
-        this.players.push(Player.IsPlayer(player) ? player as Player : new Player(player as string))
+    Join(player: Player) {
+        this.players.push(player)
+    }
+
+    Leave(playerID: string) {
+        this.players = this.players.filter(player => player.id !== playerID)
     }
 }

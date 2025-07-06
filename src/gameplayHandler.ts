@@ -11,6 +11,11 @@ export const registerGameHandlers = (io: Server, socket: Socket) => {
         GameService.JoinGame(io, socket)
     }
 
+    const disconnect = () => {
+        GameService.LeaveGame(io, socket)
+    }
+
     socket.on('game:ping', ping)
     socket.on('game:join', join)
+    socket.on('disconnect', disconnect)
 }
