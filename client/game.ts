@@ -2,4 +2,15 @@ import { io } from 'socket.io-client'
 
 const socket = io()
 
-socket.emit('game:ping', 'Hello world!')
+function RegisterEventHandlers() {
+    const PlayerJoin = (newPlayerID: string) => {
+        console.log(`New player joined: ${newPlayerID}`)
+    }
+
+    socket.on('player:join', PlayerJoin)
+}
+
+window.onload = () => {
+    RegisterEventHandlers()
+    socket.emit('game:join')    
+}
