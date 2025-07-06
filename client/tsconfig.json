@@ -3,7 +3,8 @@
         "target": "ESNext",
         "outDir": "../public",
         "module": "NodeNext",
-        "moduleResolution": "NodeNext"
+        "moduleResolution": "NodeNext",
+        "removeComments": true,
     },
     "exclude": ["*.old.*", "*.test.*", "*.d.ts", "*.ignore.*", "*.scss"]
 }
