@@ -1,0 +1,147 @@
+@use "sass:color";
+@use "sass:math";
+
+$bluegem: #1d65d1;
+$redgem: #b40d0d;
+$whitegem: #dadada;
+$greengem: #00a015;
+$blackgem: #6b3801;
+$goldgem: #FFDF00;
+$gemtypes: "blue", "red", "white", "green", "black", "gold";
+$gemsize: 2rem;
+$gemborderwidth: 0.15rem;
+
+html, body {
+    height: 100vh;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
+    background-image: 
+        url("./wood_grain_texture.png"),
+        radial-gradient(circle,rgba(191, 124, 0, 1) 0%,
+                               rgba(145, 105, 31, 1) 80%, 
+                               rgba(0, 0, 0, 1) 100%);
+    color: white;
+    user-select: none;
+}
+
+#board {
+    padding: 4% 15% 0;
+    display: flex;
+    flex-direction: column;
+    height: 80%;
+    & :last-child {
+        padding-bottom: 0 !important;
+    }
+}
+
+#nobles, #market, .row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-evenly;
+    align-items: center;
+    align-content: center;
+    padding-bottom: 1%;
+}
+
+[class$="-slot"] {
+    background-color: black;
+}
+
+.noble-slot {
+    // TODO: Account for some sort of spacing between gems
+    width: calc(($gemborderwidth * 2 + $gemsize) * 3);
+    height: calc(($gemborderwidth * 2 + $gemsize) * 3);
+    border: white solid medium;
+    border-radius: 10%;
+    clip-path: border-box;
+}
+
+.row {
+    padding-top: 0.5%;
+    height: 100%;
+}
+
+@mixin gem-base($gem-color) {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: $gemsize;
+    height: $gemsize;
+    border: solid $gemborderwidth white;
+    border-radius: 50%;
+    font-size: 32px;
+    &:hover {
+        cursor: pointer;
+    }
+    @if $gem-color == "blue" {
+        border-color: $bluegem;
+        background-color: color.adjust($bluegem, $lightness: -15%);
+    } @else if $gem-color == "red" {
+        border-color: $redgem;
+        background-color: color.adjust($redgem, $lightness: -10%);
+    } @else if $gem-color == "white" {
+        border-color: $whitegem;
+        background-color: color.adjust($whitegem, $lightness: -15%);
+    } @else if $gem-color == "green" {
+        border-color: $greengem;
+        background-color: color.adjust($greengem, $lightness: -10%);
+    } @else if $gem-color == "black" {
+        border-color: $blackgem;
+        background-color: color.adjust($blackgem, $lightness: -10%);
+    } @else if $gem-color == "gold" {
+        border-color: $goldgem;
+        background-color: color.adjust($goldgem, $lightness: -10%);
+    } @else {
+        @error "Unknown gem type #{$gem-color}.";
+    }
+}
+
+@each $type in $gemtypes {
+    [gem-type="#{$type}"] {
+        @include gem-base($type)
+    }
+}
+
+.card-slot {
+    border: white solid medium;
+    border-color: inherit;
+    clip-path: border-box;
+    border-radius: 10%;
+    // TODO: Account for some sort of spacing between gems
+    min-width: calc(($gemborderwidth * 2 + $gemsize) * 4);
+    height: 100%;
+    &:hover {
+        cursor: pointer;
+    }
+}
+
+.drawpile {
+    position: relative;
+
+    .draw-caption {
+        position: absolute;
+        top: 5%;
+        left: 0;
+        right: 0;
+        text-align: center;
+    }
+
+    // Container element for svg
+    .tier-footer {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 5%;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: center;
+
+        svg {
+            padding: 0 5px;
+        }
+    }
+    
+}
