@@ -22,6 +22,9 @@ export function JoinGame(IOServer: Server, socket: Socket): void {
         GAMEINSTANCES.push(new Game(newPlayer))
     } else {
         IOServer.to(gameToJoin.id).emit('player:join', newPlayer.id)
+        for (const player of gameToJoin.players) {
+            socket.emit('player:join', player.id)
+        }
         gameToJoin.Join(newPlayer)
     }
 
