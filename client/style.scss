@@ -26,7 +26,7 @@ html, body {
 }
 
 #board {
-    padding: 4% 15% 0;
+    padding: 4.5% 15% 0;
     display: flex;
     flex-direction: column;
     height: 80%;
@@ -99,13 +99,13 @@ html, body {
 }
 
 @each $type in $gemtypes {
-    [gem-type="#{$type}"] {
+    .gem[gem-type="#{$type}"] {
         @include gem-base($type)
     }
 }
 
 .card-slot {
-    border: white solid medium;
+    border: transparent solid medium;
     border-color: inherit;
     clip-path: border-box;
     border-radius: 10%;
@@ -144,4 +144,103 @@ html, body {
         }
     }
     
+}
+
+#draw-tier-3 {
+    background: linear-gradient(135deg, #081480 0%, #1CB5E0 100%);
+}
+
+#draw-tier-2 {
+    background: linear-gradient(135deg, #c67700 0%, #faff60 100%);
+}
+
+#draw-tier-1 {
+    background: linear-gradient(135deg, #008552 0%, #9ebd13 100%);
+}
+
+.inventory-shelf {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    
+    .points-display-container, .nobles-count-display-container {
+        align-self: center;
+        font-size: 32px;
+    }
+
+    .gem-sub-shelf {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .gem-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        .dev-gem-yield {
+            font-size: 24px;
+        }
+    }
+
+    &.vertical-shelf {
+        flex-direction: column;
+        top: 0;
+        bottom: 0;
+        .dev-gem-yield {
+            position: relative;
+        }
+        .points-display-container, .nobles-count-display-container {
+            padding: 2.5% 0;
+        }
+        .gem-sub-shelf {
+            flex-direction: column;
+        }
+        .gem-container {
+            padding: 3% 0;
+        }
+        &.left-shelf {
+            left: $gemborderwidth;
+            .gem-container {
+                flex-direction: row;
+            }
+            .dev-gem-yield {
+                left: 20%;
+            }
+        }
+        &.right-shelf {
+            right: $gemborderwidth;
+            .gem-container {
+                flex-direction: row-reverse;
+            }
+            .dev-gem-yield {
+                right: 20%;
+            }
+        }
+    }
+    
+    &.horizontal-shelf {
+        flex-direction: row;
+        left: 0;
+        right: 0;
+        .points-display-container, .nobles-count-display-container {
+            padding: 0 2.5%;
+        }
+        .gem-container {
+            padding: 0 2%;
+        }
+        &.bottom-shelf {
+            bottom: $gemborderwidth;
+            .gem-container {
+                flex-direction: column-reverse;
+            }
+        }
+        &.top-shelf {
+            top: $gemborderwidth;
+            .gem-container {
+                flex-direction: column;
+            }
+        }
+    }
 }
