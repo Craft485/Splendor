@@ -3,6 +3,8 @@ const body = document.body
 export function AddNewInventoryShelfForPlayer(id: string, playerCount: number): void {
     const newShelf = document.createElement('div')
     newShelf.id = id
+    // Placement of the engine/shelf is dependent on the player count
+    // NOTE: we may want to change the order of this later to provide better consistency across different players
     newShelf.className = `inventory-shelf ${
         playerCount > 2 
         ? `vertical-shelf ${playerCount === 3 
