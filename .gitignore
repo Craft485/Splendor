@@ -4,3 +4,4 @@ out/
 *.ignore.*
 *.test.*
 public/*.js
+public/*.css

@@ -8,6 +8,78 @@
     <script type="module" src="game.js" defer></script>
 </head>
 <body>
-    Hello world!
+    <article id="board">
+        <div id="nobles">
+            <div class="noble-slot"></div>
+            <div class="noble-slot"></div>
+            <div class="noble-slot"></div>
+            <div class="noble-slot"></div>
+        </div>
+        <div id="market">
+            <div gem-type="blue" class="gem">X</div>
+            <div gem-type="red" class="gem">X</div>
+            <div gem-type="white" class="gem">X</div>
+            <div gem-type="green" class="gem">X</div>
+            <div gem-type="black" class="gem">X</div>
+            <div gem-type="gold" class="gem">5</div>
+        </div>
+        <div class="row" id="tier_3">
+            <div class="drawpile card-slot" id="draw-tier-3">
+                <div class="draw-caption">
+                    Cards Remaining: <span class="draw-caption-remaining">20</span>
+                </div>
+                <div class="tier-footer">
+                    <svg height="20" width="20" xmlns="http://www.w3.org/2000/svg">
+                        <circle r="10" cx="10" cy="10" fill="white" />
+                    </svg>
+                    <svg height="20" width="20" xmlns="http://www.w3.org/2000/svg">
+                        <circle r="10" cx="10" cy="10" fill="white" />
+                    </svg>
+                    <svg height="20" width="20" xmlns="http://www.w3.org/2000/svg">
+                        <circle r="10" cx="10" cy="10" fill="white" />
+                    </svg>
+                </div>
+            </div>
+            <div class="card-slot"></div>
+            <div class="card-slot"></div>
+            <div class="card-slot"></div>
+            <div class="card-slot"></div>
+        </div>
+        <div class="row" id="tier_2">
+            <div class="drawpile card-slot" id="draw-tier-2">
+                <div class="draw-caption">
+                    Cards Remaining: <span class="draw-caption-remaining">30</span>
+                </div>
+                <div class="tier-footer">
+                    <svg height="20" width="20" xmlns="http://www.w3.org/2000/svg">
+                        <circle r="10" cx="10" cy="10" fill="white" />
+                    </svg>
+                    <svg height="20" width="20" xmlns="http://www.w3.org/2000/svg">
+                        <circle r="10" cx="10" cy="10" fill="white" />
+                    </svg>
+                </div>
+            </div>
+            <div class="card-slot"></div>
+            <div class="card-slot"></div>
+            <div class="card-slot"></div>
+            <div class="card-slot"></div>
+        </div>
+        <div class="row" id="tier_1">
+            <div class="drawpile card-slot" id="draw-tier-1">
+                <div class="draw-caption">
+                    Cards Remaining: <span class="draw-caption-remaining">40</span>
+                </div>
+                <div class="tier-footer">
+                    <svg height="20" width="20" xmlns="http://www.w3.org/2000/svg">
+                        <circle r="10" cx="10" cy="10" fill="white" />
+                    </svg>
+                </div>
+            </div>
+            <div class="card-slot"></div>
+            <div class="card-slot"></div>
+            <div class="card-slot"></div>
+            <div class="card-slot"></div>
+        </div>
+    </article>
 </body>
 </html>

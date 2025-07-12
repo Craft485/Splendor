@@ -5,7 +5,8 @@
   "scripts": {
     "start": "cd out && node server.js",
     "compile-server": "cd src && tsc -p ./tsconfig.json",
-    "compile-client": "cd client && tsc -p ./tsconfig.json && cd .. && bash module_to_cdn.bash",
+    "compile-sass": "sass --no-source-map --verbose -c --update --stop-on-error client/:public/",
+    "compile-client": "cd client && tsc -p ./tsconfig.json && cd .. && bash module_to_cdn.bash && npm run compile-sass",
     "compile": "npm run compile-server && npm run compile-client",
     "c": "npm run compile",
     "s": "npm run start",
@@ -32,6 +33,7 @@
   "devDependencies": {
     "@types/express": "^5.0.3",
     "@types/node": "^24.0.10",
-    "@types/socket.io": "^3.0.1"
+    "@types/socket.io": "^3.0.1",
+    "sass": "1.89.2"
   }
 }
