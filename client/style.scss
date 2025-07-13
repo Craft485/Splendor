@@ -50,7 +50,9 @@ html, body {
 }
 
 .noble-slot {
-    // TODO: Account for some sort of spacing between gems
+    display: flex;
+    justify-content: center;
+    align-items: center;
     width: calc(($gemborderwidth * 2 + $gemsize) * 3);
     height: calc(($gemborderwidth * 2 + $gemsize) * 3);
     border: white solid medium;
@@ -241,6 +243,59 @@ html, body {
             .gem-container {
                 flex-direction: column;
             }
+        }
+    }
+}
+
+.blocker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: 0;
+    padding: 0;
+    background: rgba(180, 184, 189, 0.75);
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+} 
+
+.dev-card {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    .dev-card-header {
+        font-size: 32px;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: whitesmoke solid medium;
+
+        span {
+            margin: 2px 5px;
+        }
+    }
+}
+
+.cost-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    flex-grow: 1;
+    .cost-row {
+        width: 100%;
+        height: fit-content;
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        .gem-container {
+            padding: 2px;
         }
     }
 }

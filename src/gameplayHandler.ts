@@ -15,7 +15,17 @@ export const registerGameHandlers = (io: Server, socket: Socket) => {
         GameService.LeaveGame(io, socket)
     }
 
+    const PlayerCountResponse = (count: number) => {
+        GameService.PlayerCountResponse(socket, count)
+    }
+
+    const PlayerReadyResponse = () => {
+        GameService.PlayerReadyResponse(io, socket)
+    }
+
     socket.on('game:ping', ping)
-    socket.on('game:join', join)
-    socket.on('disconnect', disconnect)
+    socket.once('game:join', join)
+    socket.once('disconnect', disconnect)
+    socket.once('respond:playercount', PlayerCountResponse)
+    socket.once('respond:playerready', PlayerReadyResponse)
 }

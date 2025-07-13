@@ -4,7 +4,7 @@
   "description": "",
   "scripts": {
     "start": "cd out && node server.js",
-    "compile-server": "cd src && tsc -p ./tsconfig.json",
+    "compile-server": "cd src && tsc -p ./tsconfig.json && cd .. && cp -v src/game/data/dev_cards.csv out/data/dev_cards.csv",
     "compile-sass": "sass --no-source-map --verbose -c --update --stop-on-error client/:public/",
     "compile-client": "cd client && tsc -p ./tsconfig.json && cd .. && bash module_to_cdn.bash && npm run compile-sass",
     "compile": "npm run compile-server && npm run compile-client",
