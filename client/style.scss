@@ -23,6 +23,7 @@ html, body {
                                rgba(0, 0, 0, 1) 100%);
     color: white;
     user-select: none;
+    font-family: sans-serif;
 }
 
 #board {
@@ -30,7 +31,7 @@ html, body {
     display: flex;
     flex-direction: column;
     height: 80%;
-    & :last-child {
+    & > :last-child {
         padding-bottom: 0 !important;
     }
 }
@@ -111,7 +112,6 @@ html, body {
     border-color: inherit;
     clip-path: border-box;
     border-radius: 10%;
-    // TODO: Account for some sort of spacing between gems
     min-width: calc(($gemborderwidth * 2 + $gemsize) * 4);
     height: 100%;
     &:hover {

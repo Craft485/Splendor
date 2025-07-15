@@ -19,8 +19,11 @@ type Card = {
 }
 
 type GameState = {
+    tier_3_draw: Card[]
     tier_3_curr: Card[]
+    tier_2_draw: Card[]
     tier_2_curr: Card[]
+    tier_1_draw: Card[]
     tier_1_curr: Card[]
     current_market: number[]
     nobles: Noble[]
@@ -185,6 +188,7 @@ export function SetupBoardState(state: GameState) {
             cardDisplay.appendChild(costDisplay)
             currSlot.appendChild(cardDisplay)
         }
+        document.querySelector<HTMLElement>(`#draw-tier-${i + 1} .draw-caption-remaining`).innerText = state[`tier_${i + 1}_draw`].length
     }
 
     const marketGems = Array.from(document.querySelectorAll<HTMLDivElement>('#market > .gem'))
