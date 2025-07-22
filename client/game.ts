@@ -36,6 +36,45 @@ const socket = io()
 let PlayerCount = 1,
     isMyTurn = false
 
+function AttemptActionPart(ev: MouseEvent) {
+    // console.log(ev)
+    const targetElement = ev.currentTarget as HTMLElement
+    const eventType = targetElement.className.includes('gem') ? 'GEM_SELECT' : 'DEV_SELECT'
+    const eventData = eventType === 'GEM_SELECT' 
+        ? {
+            gem_type: targetElement.getAttribute('gem-type'),
+          } 
+        : { 
+            card_data: (s => {
+                const parser = /(?:gem-type="|<span>)((?:\w+">)?\d)/g
+                let parsed: RegExpExecArray | null,
+                    res: (string | number)[][] = []
+                while ((parsed = parser.exec(s)) !== null) {
+                    res.push(parsed[1].split('\">'))
+                }
+                res = res.map(x => x.map(y => !isNaN(Number(y)) ? Number(y) : y))
+                return { 
+                    points: res.shift()[0],
+                    yield: res.shift(),
+                    cost: res,
+                    tier: Number(targetElement.parentElement.parentElement.id.split('_')[1]),
+                    rowIndex: Number(targetElement.parentElement.getAttribute('row-index')),
+                }
+            })(targetElement.innerHTML)
+          }
+    const event = { eventType, eventData }
+    console.log(event)
+    socket.emit('player:attempt:action:part', event)
+}
+
+function CancelCurrentAction() {
+    socket.emit('player:attempt:action:cancel')
+}
+
+function CompleteCurrentAction() {
+    socket.emit('player:attempt:action:complete')
+}
+
 function RegisterEventHandlers() {
     const PlayerJoin = (newPlayerID: string) => {
         console.log(`New player joined: ${newPlayerID}`)
@@ -75,6 +114,61 @@ function RegisterEventHandlers() {
         console.log(InitState)
         UIUpdates.SetupBoardState(InitState)
         UIUpdates.RemoveReadyBlocker()
+        const ActionElements = Array.from(document.querySelectorAll<HTMLElement>('.dev-card')).concat(Array.from(document.querySelectorAll<HTMLElement>('#market > .gem:not([gem-type="gold"])')))
+        for (const element of ActionElements) {
+            element.onclick = AttemptActionPart
+        }
+    }
+
+    const DrawCard = (card, tier, rowIndex) => {
+        console.log('DrawCard')
+        console.log(card)
+        console.log(`Tier: ${tier} | Index: ${rowIndex}`)
+        const newCardElement = UIUpdates.DrawCard(card, tier, rowIndex)
+        newCardElement.onclick = AttemptActionPart
+    }
+
+    const GameWon = winner => {
+        const player = winner === socket.id ? 'local' : winner
+        UIUpdates.HighlightWinner(player)
+        alert(player === 'local' ? 'You won' : 'Game over')
+    }
+
+    const TurnStart = () => {
+        console.log('TurnStart')
+        UIUpdates.UpdateCurrentPlayer('local')
+        isMyTurn = true
+    }
+
+    const TurnUpdate = id => {
+        console.log('TurnUpdate')
+        UIUpdates.UpdateCurrentPlayer(id)
+        isMyTurn = false
+    }
+
+    const ActionPartSuccess = data => {
+        console.log('ActionPartSuccess')
+        console.log(data)
+        const ActionButtons = UIUpdates.UpdateAction(data, isMyTurn)
+        for (const button of ActionButtons) {
+            if (button.classList.contains('cancel')) {
+                button.onclick = CancelCurrentAction
+            } else if (button.classList.contains('confirm')) {
+                button.onclick = CompleteCurrentAction
+            }
+        }
+    }
+
+    const ActionCancelSuccess = data => {
+        console.log('ActionCancelSuccess')
+        UIUpdates.CancelAction(data)
+    }
+
+    const ActionCompleteSuccess = (data, id) => {
+        console.log('ActionCompleteSuccess')
+        console.log(data)
+        console.log(id)
+        UIUpdates.CompleteAction(data, id === socket.id ? 'local' : id)
     }
 
     socket.on('player:join', PlayerJoin)
@@ -82,6 +176,13 @@ function RegisterEventHandlers() {
     socket.once('ask:playercount', GetPlayerCount)
     socket.once('ask:playerready', AskPlayerReady)
     socket.once('game:start', GameStart)
+    socket.on('game:drawcard', DrawCard)
+    socket.once('game:win', GameWon)
+    socket.on('turn:start', TurnStart)
+    socket.on('turn:update', TurnUpdate)
+    socket.on('player:success:action:part', ActionPartSuccess)
+    socket.on('player:success:action:cancel', ActionCancelSuccess)
+    socket.on('player:success:action:complete', ActionCompleteSuccess)
 }
 
 window.onload = () => {
