@@ -29,9 +29,27 @@ type GameState = {
     nobles: Noble[]
 }
 
+type ActionPart = {
+    eventType: 'GEM_SELECT'
+    eventData: {
+        gem_type: GemType
+    }
+} | {
+    eventType: 'DEV_SELECT'
+    eventData: {
+        card_data: {
+            points: number
+            yield: [GemType, number]
+            cost: [GemType, number][]
+            tier: 1 | 2 | 3
+            rowIndex: 0 | 1 | 2 | 3
+        }
+    }
+}
+
 export function AddNewInventoryShelfForPlayer(id: string, playerCount: number): void {
     const newShelf = document.createElement('div')
-    newShelf.id = id
+    newShelf.id = `player-${id}`
     // Placement of the engine/shelf is dependent on the player count
     // NOTE: we may want to change the order of this later to provide better consistency across different players
     newShelf.className = `inventory-shelf ${
@@ -195,4 +213,139 @@ export function SetupBoardState(state: GameState) {
     for (let i = 0; i < marketGems.length; i++) {
         marketGems[i].innerText = String(state.current_market[i])
     }
+}
+
+export function UpdateAction(data: ActionPart, isMyTurn: boolean): HTMLButtonElement[] {
+    const actionDisplay = document.getElementById('action-display') || document.createElement('div')
+    if (actionDisplay.id === '') { // No current action being displayed, do some inital setup
+        actionDisplay.id = 'action-display'
+        const cardElement = document.querySelector('.dev-card')
+        const cardRect = cardElement.getBoundingClientRect()
+        actionDisplay.style.cssText = `height: ${cardRect.height}px; top: ${(window.innerHeight - cardRect.height) / 2}px;`
+        body.appendChild(actionDisplay)
+        if (isMyTurn) {
+            const buttonContainer = document.createElement('div')
+            buttonContainer.className = 'action-button-container'
+            
+            const cancelButton = document.createElement('button')
+            cancelButton.className = 'action-button cancel'
+            cancelButton.innerText = 'Cancel'
+            const confirmButton = document.createElement('button')
+            confirmButton.className = 'action-button confirm'
+            confirmButton.innerText = 'Confirm'
+            buttonContainer.appendChild(confirmButton)
+            buttonContainer.appendChild(cancelButton)
+            actionDisplay.appendChild(buttonContainer)
+        }
+    }
+    if (data.eventType === 'GEM_SELECT') {
+        let gemItemInAction: HTMLElement | null
+        if ((gemItemInAction = document.querySelector<HTMLElement>(`#action-display .gem[gem-type="${data.eventData.gem_type}"]`)) !== null) {
+            // Duplicate gem type selected
+            gemItemInAction.innerText = String(+gemItemInAction.innerText + 1)
+        } else {
+            // New gem type selected
+            const gem = document.createElement('div')
+            gem.className = 'gem'
+            gem.setAttribute('gem-type', data.eventData.gem_type)
+            gem.innerText = '1'
+            actionDisplay.appendChild(gem)
+        }
+        const GemMarketDisplay = document.querySelector<HTMLElement>(`#market > .gem[gem-type="${data.eventData.gem_type}"]`)
+        GemMarketDisplay.innerText = String(+GemMarketDisplay.innerText - 1)
+    } else if (data.eventType === 'DEV_SELECT') {
+        // Convert even data into game data, then take that and convert into UI elements
+        const CardData: Card = {
+            points: data.eventData.card_data.points,
+            cost: data.eventData.card_data.cost.map(c => { return { gem_type: c[0], quantity: c[1] } }),
+            yeild_gem_type: data.eventData.card_data.yield[0]
+        }
+        const cardSlot = document.createElement('div')
+        cardSlot.className = 'card-slot'
+        const cardDisplay = document.createElement('div')
+        cardDisplay.className = 'dev-card'
+        const costDisplay = CreateDevCardCostDisplay(CardData.cost)
+        const headerDisplay = CreateDevCardHeaderDisplay(CardData)
+        cardDisplay.appendChild(headerDisplay)
+        cardDisplay.appendChild(costDisplay)
+        cardSlot.appendChild(cardDisplay)
+        actionDisplay.appendChild(cardSlot)
+    }
+    return Array.from(document.querySelectorAll<HTMLButtonElement>('.action-button'))
+}
+
+export function CancelAction(action: ActionPart[]) {
+    let actionDisplay: HTMLElement | null
+    if ((actionDisplay = document.getElementById('action-display')) !== null) {
+        actionDisplay.remove()
+        for (const part of action) {
+            if (part.eventType === 'DEV_SELECT') {
+                // FIXME: Do we need to do anything here? Possibly for reserves
+            } else if (part.eventType === 'GEM_SELECT') {
+                const gemDisplay = document.querySelector<HTMLElement>(`#market > .gem[gem-type="${part.eventData.gem_type}"]`)
+                gemDisplay.innerText = String(+gemDisplay.innerText + 1)
+            }
+        }
+    }
+}
+
+export function CompleteAction(action: ActionPart[], playerID: string) {
+    let actionDisplay: HTMLElement | null
+    if ((actionDisplay = document.getElementById('action-display')) !== null) {
+        actionDisplay.remove()
+        for (const part of action) {
+            if (part.eventType === 'DEV_SELECT') {
+                let goldRemainder = 0
+                for (const [type, quantity] of part.eventData.card_data.cost) {
+                    const currentGemYeild = Number(document.querySelector<HTMLElement>(`#player-${playerID} .dev-gem-yield[gem-type="${type}"]`).innerText)
+                    const currentTokenCount = Number(document.querySelector<HTMLElement>(`#player-${playerID} .gem[gem-type="${type}"]`).innerText)
+                    const tokenRequirement = quantity - currentGemYeild
+                    if (tokenRequirement > 0) {
+                        const difference = currentTokenCount - tokenRequirement
+                        document.querySelector<HTMLElement>(`#player-${playerID} .gem[gem-type="${type}"]`).innerText = String(Math.max(0, difference))
+                        if (difference < 0) {
+                            goldRemainder -= difference // Make use of double negative acting as positive
+                        }
+                        // Update market UI
+                        const GemMarketDisplay = document.querySelector<HTMLElement>(`#market .gem[gem-type="${type}"]`)
+                        GemMarketDisplay.innerText = String(+GemMarketDisplay.innerText + tokenRequirement)
+                    }
+                }
+                if (goldRemainder > 0) {
+                    const goldGemDisplay = document.querySelector<HTMLElement>(`#player-${playerID} .gem[gem-type="gold"]`)
+                    goldGemDisplay.innerText = String(+goldGemDisplay.innerText - goldRemainder)
+                }
+                const yieldDisplay = document.querySelector<HTMLElement>(`#player-${playerID} .dev-gem-yield[gem-type="${part.eventData.card_data.yield[0]}"]`)
+                yieldDisplay.innerText = String(+yieldDisplay.innerText + part.eventData.card_data.yield[1])
+                const pointsDisplay = document.querySelector<HTMLElement>(`#player-${playerID} .point-display`)
+                pointsDisplay.innerText = String(+pointsDisplay.innerText + part.eventData.card_data.points)
+            } else if (part.eventType === 'GEM_SELECT') {
+                const gemDisplay = document.querySelector<HTMLElement>(`#player-${playerID} .gem[gem-type="${part.eventData.gem_type}"]`)
+                gemDisplay.innerText = String(+gemDisplay.innerText + 1)
+            }
+        }
+    }
+}
+
+export function DrawCard(card: Card, tier: 1 | 2 | 3, index: 0 | 1 | 2 | 3): HTMLDivElement {
+    const cardDisplay = document.createElement('div')
+    cardDisplay.className = 'dev-card'
+    const costDisplay = CreateDevCardCostDisplay(card.cost)
+    const headerDisplay = CreateDevCardHeaderDisplay(card)
+    cardDisplay.appendChild(headerDisplay)
+    cardDisplay.appendChild(costDisplay)
+    const slot = document.querySelector<HTMLElement>(`#tier_${tier} .card-slot[row-index="${index}"]`)
+    slot.replaceChildren(cardDisplay)
+    const drawpile = document.querySelector<HTMLElement>(`#tier_${tier} .draw-caption-remaining`)
+    drawpile.innerText = String(+drawpile.innerText - 1)
+    return cardDisplay
+}
+
+export function HighlightWinner(id: string) {
+    document.getElementById(`player-${id}`).classList.add('winner')
+}
+
+export function UpdateCurrentPlayer(id: string) {
+    document.querySelector<HTMLElement>('.current-player')?.classList.remove('current-player')
+    document.getElementById(`player-${id}`).classList.add('current-player')
 }

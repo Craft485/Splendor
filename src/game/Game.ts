@@ -32,16 +32,79 @@ type GameState = {
 
 type CSV_Dev_Card_Row = [number, number, GemType | '', number, number, number, number, number]
 
+type ActionPart = {
+    eventType: 'GEM_SELECT'
+    eventData: {
+        gem_type: GemType
+    }
+} | {
+    eventType: 'DEV_SELECT'
+    eventData: {
+        card_data: {
+            points: number
+            yield: [GemType, number]
+            cost: [GemType, number][]
+            tier: 1 | 2 | 3
+            rowIndex: 0 | 1 | 2 | 3
+        }
+    }
+}
+
+type Action = ActionPart[]
+
+type GemEngine = {
+    token_quantity: number
+    yield: number
+}
+
+type PlayerEngine = {
+    blue: GemEngine
+    red: GemEngine
+    white: GemEngine
+    green: GemEngine
+    black: GemEngine
+    gold: GemEngine    
+}
+
 const GEMTYPES: GemType[] = ['blue', 'red', 'white', 'green', 'black', 'gold']
 const GOLD_GEM_COUNT = 5
+const POINTS_TO_WIN = 15
 
 export class Player  {
     id: string
     isReady: boolean
-    // TODO: Some sort of engine state
+    points: number
+    engine: PlayerEngine
     constructor(id: string) {
         this.id = id
         this.isReady = false
+        this.points = 0
+        this.engine = {
+            blue: {
+                token_quantity: 0,
+                yield: 0
+            },
+            red: {
+                token_quantity: 0,
+                yield: 0
+            },
+            white: {
+                token_quantity: 0,
+                yield: 0
+            },
+            green: {
+                token_quantity: 0,
+                yield: 0
+            },
+            black: {
+                token_quantity: 0,
+                yield: 0
+            },
+            gold: {
+                token_quantity: 0,
+                yield: 0 // This should never change but is here for completness
+            }
+        }
     }
 }
 
@@ -53,9 +116,11 @@ export class Game {
     hasStarted: boolean
     state: GameState
     currentPlayer: Player
+    currentPlayerIndex: number
+    currentAction: Action
     constructor(startingPlayer: Player) {
         this.id = uuidv4()
-        // Blank game state rto be populated later on start
+        // Blank game state to be populated later on start
         this.state = {
             tier_3_draw: [],
             tier_3_curr: [],
@@ -84,19 +149,168 @@ export class Game {
         if (this.players.filter(p => p.isReady).length === this.playerCount) {
             await SetupBoardFromCSV(this)
             this.hasStarted = true
+            this.currentPlayerIndex = 0
+            this.currentPlayer = this.players[this.currentPlayerIndex]
             return true
         }
         return false
     }
 
-    Draw(tier: number): Card | null {
+    Draw(tier: 1 | 2 | 3, rowIndex = -1): Card | null {
         const drawpile: Card[] = this.state[`tier_${tier}_draw`]
         const output: Card[] = this.state[`tier_${tier}_curr`]
-        if (drawpile.length === 0 || output.length === 4) return null
+        if (drawpile.length === 0 || (output.length === 4 && rowIndex === -1)) return null
         const cardIndex = Math.floor(Math.random() * drawpile.length)
         const card: Card = drawpile.splice(cardIndex, 1)[0]
-        output.push(card)
+        rowIndex < 0 ? output.push(card) : output[rowIndex] = card
         return card
+    }
+
+    GetPlayerByID(id: string): Player {
+        return this.players.find(p => p.id === id)
+    }
+
+    AttemptActionPart(playerID: string, data: ActionPart): boolean {
+        console.log(JSON.stringify(this.state.current_market))
+        console.log(data)
+        // Validate player turn order
+        console.log('Validating turn order')
+        if (this.currentPlayer.id !== playerID) return false
+        if (!this.currentAction) this.currentAction = [] // If not action instance exists, create one
+        const CurrentEvents = this.currentAction.map(part => part.eventType)
+        // Validate action event type
+        console.log('Validating event type')
+        if (CurrentEvents.length > 0 && !CurrentEvents.includes(data.eventType)) return false
+        // Validate the event data
+        if (data.eventType === 'GEM_SELECT') {
+            const gemTypeIndex = GEMTYPES.findIndex(type => type === data.eventData.gem_type)
+            const CurrentGemTypesInAction = this.currentAction.map(part => part.eventType === 'GEM_SELECT' ? part.eventData.gem_type : null)
+            console.log(CurrentGemTypesInAction)
+            // Is the player trying to take a gem when there are none left of that type?
+            console.log('Validating market count for gem type ' + data.eventData.gem_type)
+            if (this.state.current_market[gemTypeIndex] === 0) return false
+            // Check that the added gem would be a valid selection
+            if (CurrentEvents.length > 0) {
+                // Is the player trying to take more than 3 gems?
+                console.log('Validating players gem count in current action')
+                if (CurrentEvents.length === 3) return false
+                // If the player has already selected two of the same gem
+                console.log('Validating player already chosen 2 of same gem type')
+                if (CurrentGemTypesInAction.length === 2 && CurrentGemTypesInAction[0] === CurrentGemTypesInAction[1]) return false
+                // Trying to take 2 of the same gem
+                if (CurrentGemTypesInAction.includes(data.eventData.gem_type)) {
+                    console.log('Trying to select two of same gem: '+ data.eventData.gem_type)
+                    // We already have two gems selected
+                    console.log('Validating player does not have two gems already selected when trying to select a duplicate gem')
+                    if (CurrentEvents.length >= 2) return false
+                    // Is the player trying to take 2 gems of the same type without there being enough to do so?
+                    // In order to take two of the same, there must have been 4 when we took the first so there should now be 3 in order for the action to be valid
+                    console.log('Validating room in market to take 2 of the same gem type')
+                    if (this.state.current_market[gemTypeIndex] < 3) return false
+                }
+            }
+            // Check if the player can accommodate the added gem
+            console.log('Validating players gem count in engine')
+            console.log(JSON.stringify(this.currentPlayer.engine))
+            const totalTokenCountFromEngine = Object.values(this.currentPlayer.engine).reduce((total, engine) => total + engine.token_quantity, 0)
+            const totalTokenCountFromCurrAction = this.currentAction.length
+            if (totalTokenCountFromEngine + totalTokenCountFromCurrAction + 1 > 10) return false
+            // Event is valid
+            console.log('Event is valid, updating state')
+            this.state.current_market[gemTypeIndex]--
+            this.currentAction.push(data)
+            return true
+        } else if (data.eventType === 'DEV_SELECT') {
+            // Check if player selection would be valid with the added dev card
+            if (CurrentEvents.length > 0) return false
+            console.log(JSON.stringify(data))
+            console.log(JSON.stringify(this.currentPlayer.engine))
+            // Check that the player can afford the dev card (include gold in the calculation)
+            let remainder = 0
+            for (const cost of data.eventData.card_data.cost) {
+                const [type, quantity] = cost
+                // Doing cost - engine allows us to see how much gold the player will need to purchase the dev card, if any
+                remainder += Math.max(0, quantity - (this.currentPlayer.engine[type].yield + this.currentPlayer.engine[type].token_quantity))
+            }
+            console.log('Remainder: ' + remainder)
+            if (remainder > this.currentPlayer.engine.gold.token_quantity) return false // Player cannot afford the card
+            // Event is valid
+            console.log('Event is valid')
+            this.currentAction.push(data)
+            return true
+        }
+    }
+
+    AttemptCompleteAction(playerID: string): boolean {
+        console.log('Complete action')
+        // If it is not the players turn
+        if (this.currentPlayer.id !== playerID) return false
+        // If there is no current action to cancel
+        if (!this.currentAction?.length) return false
+        for (const action of this.currentAction) {
+            console.log(JSON.stringify(action))
+            if (action.eventType === 'DEV_SELECT') {
+                // TODO: We should add reservation logic here as well once we have the data setup for it
+                // TODO: Check nobles?
+                // Handle points
+                this.currentPlayer.points += action.eventData.card_data.points
+                // Handle cost
+                let goldRemainder = 0
+                for (const cost of action.eventData.card_data.cost) {
+                    const [type, quantity] = cost
+                    let tokenRequirement = quantity - this.currentPlayer.engine[type].yield
+                    if (tokenRequirement > 0) {
+                        this.currentPlayer.engine[type].token_quantity -= tokenRequirement
+                        if (this.currentPlayer.engine[type].token_quantity < 0) {
+                            goldRemainder += Math.abs(this.currentPlayer.engine[type].token_quantity)
+                            this.currentPlayer.engine[type].token_quantity = 0
+                        }
+                        // Update market state
+                        const GemTypeIndex = GEMTYPES.findIndex(t => t === type)
+                        this.state.current_market[GemTypeIndex] += tokenRequirement
+                    }
+                }
+                this.currentPlayer.engine['gold'].token_quantity -= goldRemainder
+                // Handle engine yield increase
+                const [yeildType, yieldAmount] = action.eventData.card_data.yield
+                this.currentPlayer.engine[yeildType].yield += yieldAmount
+                // Update state
+                this.state[`tier_${action.eventData.card_data.tier}_curr`][action.eventData.card_data.rowIndex] = null
+            } else if (action.eventType === 'GEM_SELECT') {
+                this.currentPlayer.engine[action.eventData.gem_type].token_quantity++
+            }
+        }
+        return true
+    }
+
+    AttemptCancelAction(playerID: string): boolean {
+        // If it is not the players turn
+        if (this.currentPlayer.id !== playerID) return false
+        // If there is no current action to cancel
+        if (!this.currentAction?.length) return false
+        for (const action of this.currentAction) {
+            if (action.eventType === 'DEV_SELECT') {
+                // TODO: Reserve logic once we have them
+            } else if (action.eventType === 'GEM_SELECT') {
+                const gemIndex = GEMTYPES.findIndex(type => type === action.eventData.gem_type)
+                this.state.current_market[gemIndex]++
+            }
+        }
+        return true
+    }
+
+    ResetCurrentActionAfterCancelOrComplete() {
+        this.currentAction.length = 0
+    }
+
+    EndCurrentTurn(): string {
+        this.currentPlayerIndex = ++this.currentPlayerIndex % this.playerCount
+        this.currentPlayer = this.players[this.currentPlayerIndex]
+        return this.currentPlayer.id
+    }
+
+    CheckForWin(): string | null {
+        return this.players.find(p => p.points >= POINTS_TO_WIN)?.id || null
     }
 }
 

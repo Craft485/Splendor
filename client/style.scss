@@ -165,6 +165,10 @@ html, body {
     display: flex;
     justify-content: center;
     
+    &.winner {
+        background: cadetblue; // Placeholder
+    }
+
     .points-display-container, .nobles-count-display-container {
         align-self: center;
         font-size: 32px;
@@ -204,6 +208,7 @@ html, body {
         }
         &.left-shelf {
             left: $gemborderwidth;
+            border-right: transparent medium solid;
             .gem-container {
                 flex-direction: row;
             }
@@ -213,6 +218,7 @@ html, body {
         }
         &.right-shelf {
             right: $gemborderwidth;
+            border-left: transparent medium solid;
             .gem-container {
                 flex-direction: row-reverse;
             }
@@ -234,16 +240,22 @@ html, body {
         }
         &.bottom-shelf {
             bottom: $gemborderwidth;
+            border-top: transparent medium solid;
             .gem-container {
                 flex-direction: column-reverse;
             }
         }
         &.top-shelf {
             top: $gemborderwidth;
+            border-bottom: transparent medium solid;
             .gem-container {
                 flex-direction: column;
             }
         }
+    }
+
+    &.current-player {
+        border-color: rebeccapurple !important;
     }
 }
 
@@ -296,6 +308,46 @@ html, body {
         align-items: center;
         .gem-container {
             padding: 2px;
+        }
+    }
+}
+
+#action-display {
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: rgba(100, 100, 100, 0.8);
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    .gem {
+        margin: 0 5px;
+    }
+    .action-button-container {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        .action-button {
+            border: solid rgb(63, 63, 63) medium;
+            color: white;
+            margin: 0 2px;
+            font-size: 32px;
+            &.cancel {
+                background-color: darkred;
+            }
+            &.confirm {
+                background-color: darkgreen;
+            }
+            &:hover {
+                cursor: pointer;
+            }
         }
     }
 }

@@ -5,6 +5,8 @@ const GAMEINSTANCES: Game[] = []
 const MAX_PLAYER_COUNT = 4
 const SocketsAwaitingPlayerCountResponse: string[] = []
 
+const sleep = async (time_ms: number) => new Promise(resolve => setTimeout(resolve, time_ms))
+
 function GetGameInstanceByPlayerID(id: string): Game | undefined {
     return GAMEINSTANCES.find(game => game.players.find(player => player.id === id))
 }
@@ -81,7 +83,71 @@ export async function PlayerReadyResponse(io: Server, socket: Socket): Promise<v
             const gameStarted = await game.Start()
             if (gameStarted) {
                 io.to(game.id).emit('game:start', game.state)
-                // TODO: Establish turn order
+                // The game will assign who the current player is on start
+                const sockets = await io.in(game.id).fetchSockets()
+                for (const player of sockets) {
+                    if (player.id === game.currentPlayer.id) {
+                        player.emit('turn:start')
+                    } else {
+                        player.emit('turn:update', game.currentPlayer.id)
+                    }
+                }
+            }
+        }
+    }
+}
+
+export function AttemptActionPart(io: Server, socket: Socket, data: any) {
+    const game = GetGameInstanceByPlayerID(socket.id)
+    if (game) {
+        const ActionSuccess = game.AttemptActionPart(socket.id, data)
+        if (ActionSuccess) {
+            // Inform all players so they can update their UI
+            io.to(game.id).emit('player:success:action:part', data)
+        }
+    }
+}
+
+export function AttemptActionCancel(io: Server, socket: Socket) {
+    const game = GetGameInstanceByPlayerID(socket.id)
+    if (game) {
+        const CancelWasSuccessful = game.AttemptCancelAction(socket.id)
+        if (CancelWasSuccessful) {
+            io.to(game.id).emit('player:success:action:cancel', game.currentAction)
+            game.ResetCurrentActionAfterCancelOrComplete()
+        }
+    }
+}
+
+export async function AttemptActionComplete(io: Server, socket: Socket) {
+    const game = GetGameInstanceByPlayerID(socket.id)
+    if (game) {
+        const ActionCompleteSuccessful = game.AttemptCompleteAction(socket.id)
+        if (ActionCompleteSuccessful) {
+            io.to(game.id).emit('player:success:action:complete', game.currentAction, game.currentPlayer.id)
+            if (game.currentAction[0].eventType === 'DEV_SELECT') {
+                // Draw a new dev card
+                const tier = game.currentAction[0].eventData.card_data.tier
+                const index = game.currentAction[0].eventData.card_data.rowIndex
+                const newCard = game.Draw(tier, index)
+                io.to(game.id).emit('game:drawcard', newCard, tier, index)
+            }
+            game.ResetCurrentActionAfterCancelOrComplete()
+            await sleep(1000)
+            const winner = game.CheckForWin()
+            if (winner !== null) {
+                io.to(game.id).emit('game:win', winner)
+                io.in(game.id).disconnectSockets(true)
+                return
+            }
+            const newCurrentPlayerID = game.EndCurrentTurn()
+            const sockets = await io.in(game.id).fetchSockets()
+            for (const player of sockets) {
+                if (player.id === newCurrentPlayerID) {
+                    player.emit('turn:start')
+                } else {
+                    player.emit('turn:update', newCurrentPlayerID)
+                }
             }
         }
     }
