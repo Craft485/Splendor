@@ -50,6 +50,10 @@ html, body {
     background-color: black;
 }
 
+#nobles {
+    min-height: calc(($gemborderwidth * 2 + $gemsize) * 3);
+}
+
 .noble-slot {
     display: flex;
     justify-content: center;

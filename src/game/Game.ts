@@ -312,6 +312,24 @@ export class Game {
     CheckForWin(): string | null {
         return this.players.find(p => p.points >= POINTS_TO_WIN)?.id || null
     }
+
+    CheckForNoble(id: string): number | null {
+        const player = this.GetPlayerByID(id)
+        outernobleloop:
+        for (let i = 0; i < this.state.nobles.length; i++) {
+            const currNoble = this.state.nobles[i]
+            for (const { gem_type: cost_type, quantity: cost_qty } of currNoble.requirements) {
+                if (player.engine[cost_type].yield < cost_qty) {
+                    continue outernobleloop
+                }
+            }
+            console.log(JSON.stringify(currNoble))
+            player.points += currNoble.points
+            this.state.nobles.splice(i, 1)
+            return i
+        }
+        return null
+    }
 }
 
 // Durstenfeld shuffle taken from https://stackoverflow.com/a/12646864/11614446
