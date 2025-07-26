@@ -72,6 +72,8 @@ function CancelCurrentAction() {
 }
 
 function CompleteCurrentAction() {
+    // Remove buttons so players know their action has been sent off
+    document.querySelector<HTMLElement>('.action-button-container')?.remove()
     socket.emit('player:attempt:action:complete')
 }
 
@@ -134,6 +136,11 @@ function RegisterEventHandlers() {
         alert(player === 'local' ? 'You won' : 'Game over')
     }
 
+    const NobleWon = (id, nobleIndex) => {
+        const player = id === socket.id ? 'local' : id
+        UIUpdates.UpdateNobles(player, nobleIndex)
+    }
+
     const TurnStart = () => {
         console.log('TurnStart')
         UIUpdates.UpdateCurrentPlayer('local')
@@ -178,6 +185,7 @@ function RegisterEventHandlers() {
     socket.once('game:start', GameStart)
     socket.on('game:drawcard', DrawCard)
     socket.once('game:win', GameWon)
+    socket.on('game:noble:won', NobleWon)
     socket.on('turn:start', TurnStart)
     socket.on('turn:update', TurnUpdate)
     socket.on('player:success:action:part', ActionPartSuccess)

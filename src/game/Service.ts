@@ -124,6 +124,7 @@ export async function AttemptActionComplete(io: Server, socket: Socket) {
     if (game) {
         const ActionCompleteSuccessful = game.AttemptCompleteAction(socket.id)
         if (ActionCompleteSuccessful) {
+            await sleep(1000) // Sleep to give time for other players to process what is happening
             io.to(game.id).emit('player:success:action:complete', game.currentAction, game.currentPlayer.id)
             if (game.currentAction[0].eventType === 'DEV_SELECT') {
                 // Draw a new dev card
@@ -131,6 +132,11 @@ export async function AttemptActionComplete(io: Server, socket: Socket) {
                 const index = game.currentAction[0].eventData.card_data.rowIndex
                 const newCard = game.Draw(tier, index)
                 io.to(game.id).emit('game:drawcard', newCard, tier, index)
+                await sleep(1000)
+                const nobleIndex = game.CheckForNoble(socket.id)
+                if (nobleIndex !== null) {
+                    io.in(game.id).emit('game:noble:won', socket.id, nobleIndex)
+                }
             }
             game.ResetCurrentActionAfterCancelOrComplete()
             await sleep(1000)

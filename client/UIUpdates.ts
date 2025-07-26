@@ -349,3 +349,11 @@ export function UpdateCurrentPlayer(id: string) {
     document.querySelector<HTMLElement>('.current-player')?.classList.remove('current-player')
     document.getElementById(`player-${id}`).classList.add('current-player')
 }
+
+export function UpdateNobles(id: string, nobleIndex: number) {
+    const points = document.querySelector<HTMLElement>(`#player-${id} .point-display`)
+    points.innerText = String(+points.innerText + 3)
+    document.querySelector<HTMLElement>(`.noble-slot:nth-child(${nobleIndex + 1})`)?.remove()
+    const nobleCount = document.querySelector<HTMLElement>(`#player-${id} .noble-count`)
+    nobleCount.innerText = String(+nobleCount.innerText + 1)
+}
