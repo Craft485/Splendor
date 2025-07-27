@@ -127,7 +127,7 @@ function RegisterEventHandlers() {
         console.log(card)
         console.log(`Tier: ${tier} | Index: ${rowIndex}`)
         const newCardElement = UIUpdates.DrawCard(card, tier, rowIndex)
-        newCardElement.onclick = AttemptActionPart
+        if (card !== null) newCardElement.onclick = AttemptActionPart
     }
 
     const GameWon = winner => {
