@@ -35,7 +35,7 @@ type ActionPart = {
         gem_type: GemType
     }
 } | {
-    eventType: 'DEV_SELECT'
+    eventType: 'DEV_SELECT' | 'RESERVE_SELECT'
     eventData: {
         card_data: {
             points: number
@@ -90,6 +90,9 @@ export function AddNewInventoryShelfForPlayer(id: string, playerCount: number): 
         </div>
     </div>
     <div class="nobles-count-display-container">Nobles: <span class="noble-count">0</span></div>`
+    if (id === 'local') {
+        newShelf.innerHTML += `<button id="view-reserve">View Your Reserve</button>`
+    }
     body.appendChild(newShelf)
 }
 
@@ -230,9 +233,11 @@ export function UpdateAction(data: ActionPart, isMyTurn: boolean): HTMLButtonEle
             const cancelButton = document.createElement('button')
             cancelButton.className = 'action-button cancel'
             cancelButton.innerText = 'Cancel'
+
             const confirmButton = document.createElement('button')
-            confirmButton.className = 'action-button confirm'
-            confirmButton.innerText = 'Confirm'
+            confirmButton.className = `action-button ${data.eventType === 'RESERVE_SELECT' ? 'reserve' : 'confirm'}`
+            confirmButton.innerText = data.eventType === 'RESERVE_SELECT' ? 'Reserve' : 'Confirm'
+            
             buttonContainer.appendChild(confirmButton)
             buttonContainer.appendChild(cancelButton)
             actionDisplay.appendChild(buttonContainer)
@@ -253,7 +258,7 @@ export function UpdateAction(data: ActionPart, isMyTurn: boolean): HTMLButtonEle
         }
         const GemMarketDisplay = document.querySelector<HTMLElement>(`#market > .gem[gem-type="${data.eventData.gem_type}"]`)
         GemMarketDisplay.innerText = String(+GemMarketDisplay.innerText - 1)
-    } else if (data.eventType === 'DEV_SELECT') {
+    } else if (data.eventType === 'DEV_SELECT' || data.eventType === 'RESERVE_SELECT') {
         // Convert even data into game data, then take that and convert into UI elements
         const CardData: Card = {
             points: data.eventData.card_data.points,
@@ -327,14 +332,18 @@ export function CompleteAction(action: ActionPart[], playerID: string) {
     }
 }
 
-export function DrawCard(card: Card, tier: 1 | 2 | 3, index: 0 | 1 | 2 | 3): HTMLDivElement {
+export function DrawCard(card: Card | null, tier: 1 | 2 | 3, index: 0 | 1 | 2 | 3): HTMLDivElement | null {
+    const slot = document.querySelector<HTMLElement>(`#tier_${tier} .card-slot[row-index="${index}"]`)
+    if (card === null) {
+        slot.children[0].remove()
+        return null
+    }
     const cardDisplay = document.createElement('div')
     cardDisplay.className = 'dev-card'
     const costDisplay = CreateDevCardCostDisplay(card.cost)
     const headerDisplay = CreateDevCardHeaderDisplay(card)
     cardDisplay.appendChild(headerDisplay)
     cardDisplay.appendChild(costDisplay)
-    const slot = document.querySelector<HTMLElement>(`#tier_${tier} .card-slot[row-index="${index}"]`)
     slot.replaceChildren(cardDisplay)
     const drawpile = document.querySelector<HTMLElement>(`#tier_${tier} .draw-caption-remaining`)
     drawpile.innerText = String(+drawpile.innerText - 1)
